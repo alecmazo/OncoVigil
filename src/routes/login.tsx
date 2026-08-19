@@ -66,9 +66,6 @@ function Login() {
           <h1 className="font-display text-3xl">
             {mode === "in" ? "Sign in" : "Create an account"}
           </h1>
-          <p className="text-sm leading-relaxed text-muted">
-            Google, X, or email — the same Grok login used for watchlists and Grok briefings.
-          </p>
           {authEnabled ? (
             <>
               {GROK_PROVIDERS.map((p) => (

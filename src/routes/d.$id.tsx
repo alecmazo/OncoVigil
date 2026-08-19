@@ -189,7 +189,7 @@ function Detail() {
                   const res = await toggleWatch({ data: id });
                   setWatching(res.watching);
                 } catch {
-                  /* session expired */
+                  window.location.assign("/login");
                 }
               }}
               className={cn(
@@ -203,13 +203,16 @@ function Detail() {
               {watching ? "Watching" : "Watch"}
             </button>
           ) : (
-            <Link
-              to="/login"
+            <button
+              type="button"
+              onClick={() => {
+                window.location.assign("/login");
+              }}
               className="inline-flex h-11 items-center gap-2 rounded-full border border-border px-4 text-sm hover:border-primary"
             >
               <Bookmark className="size-4" />
-              Sign in to watch
-            </Link>
+              Watch
+            </button>
           )}
         </div>
 
@@ -257,32 +260,22 @@ function Detail() {
 
         <section className="mt-6 rounded-[var(--radius)] border border-border bg-elevated p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="font-display text-xl">Ask Grok for a briefing</h2>
-              <p className="mt-1 text-xs text-muted">
-                Same path as sign-in — Grok session, then grok-4.5 on this program.
-              </p>
-            </div>
-            {canBrief ? (
-              <button
-                type="button"
-                disabled={loadingBrief}
-                onClick={() => void runBriefing(d)}
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm text-primary-fg"
-              >
-                {loadingBrief && <Loader2 className="size-4 animate-spin" />}
-                {brief ? "Regenerate briefing" : "Generate briefing"}
-              </button>
-            ) : authEnabled ? (
-              <a
-                href={loginNext(id)}
-                className="inline-flex h-11 items-center rounded-full bg-primary px-4 text-sm text-primary-fg"
-              >
-                Sign in to generate
-              </a>
-            ) : (
-              <p className="text-sm text-muted">Sign in on the live app to generate.</p>
-            )}
+            <h2 className="font-display text-xl">Ask Grok for a briefing</h2>
+            <button
+              type="button"
+              disabled={loadingBrief}
+              onClick={() => {
+                if (!canBrief) {
+                  window.location.assign("/login");
+                  return;
+                }
+                void runBriefing(d);
+              }}
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm text-primary-fg"
+            >
+              {loadingBrief && <Loader2 className="size-4 animate-spin" />}
+              {brief ? "Regenerate briefing" : "Generate briefing"}
+            </button>
           </div>
           {briefErr && <p className="mt-3 text-sm text-danger">{briefErr}</p>}
           {brief && (
