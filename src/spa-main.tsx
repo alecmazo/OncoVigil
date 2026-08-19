@@ -13,6 +13,7 @@ import { Route as LabRouteImport } from "@/routes/lab";
 import { Route as LoginRouteImport } from "@/routes/login";
 import { Route as WatchlistRouteImport } from "@/routes/watchlist";
 import { Route as DetailRouteImport } from "@/routes/d.$id";
+import { Route as SpopRouteImport } from "@/routes/spop";
 import "./styles.css";
 
 const spaRoot = createRootRoute({
@@ -51,12 +52,19 @@ const detailRoute = createRoute({
   component: DetailRouteImport.options.component,
 });
 
+const spopRoute = createRoute({
+  getParentRoute: () => spaRoot,
+  path: "spop",
+  component: SpopRouteImport.options.component,
+});
+
 const routeTree = spaRoot.addChildren([
   indexRoute,
   labRoute,
   loginRoute,
   watchlistRoute,
   detailRoute,
+  spopRoute,
 ]);
 
 const router = createRouter({

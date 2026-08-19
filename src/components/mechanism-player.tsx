@@ -22,6 +22,8 @@ const SCENE_LABEL: Record<SceneKind, string> = {
   adc: "ADC docking",
   parp: "DNA repair trap",
   vegf: "Vessel + checkpoint",
+  spop: "SPOP ligase",
+  atr: "ATR checkpoint",
 };
 
 function Scene({ kind, active }: { kind: SceneKind; active: boolean }) {
@@ -302,6 +304,46 @@ function Scene({ kind, active }: { kind: SceneKind; active: boolean }) {
           <circle cx="320" cy="160" r="24" fill="#1e2c38" stroke="#8ab4ff" strokeWidth="3" className={pulse} />
           <text x="320" y="250" textAnchor="middle" fill="#8a9b94" fontSize="13">
             vessels normalize · T cell can enter
+          </text>
+        </>
+      )}
+
+      {kind === "spop" && (
+        <>
+          <rect x="90" y="110" width="150" height="100" rx="16" fill="#1a2421" stroke="#2fbfa4" strokeWidth="3" />
+          <text x="165" y="165" textAnchor="middle" fill="#2fbfa4" fontSize="16">
+            SPOP
+          </text>
+          <text x="165" y="188" textAnchor="middle" fill="#8a9b94" fontSize="11">
+            CUL3 ligase
+          </text>
+          <path d="M250 160 L310 160" stroke="#d4a04a" strokeWidth="3" />
+          <circle cx="360" cy="120" r="22" fill="#3a2a2a" stroke="#d4a04a" strokeWidth="2" className={pulse} />
+          <circle cx="410" cy="160" r="22" fill="#3a2a2a" stroke="#d4a04a" strokeWidth="2" className={pulse} />
+          <circle cx="360" cy="200" r="22" fill="#3a2a2a" stroke="#d4a04a" strokeWidth="2" className={pulse} />
+          <text x="385" y="260" textAnchor="middle" fill="#8a9b94" fontSize="12">
+            AR · BRD4 · TRIM24 pile up
+          </text>
+          <text x="520" y="164" fill="#c45c5c" fontSize="12">
+            mutant
+          </text>
+        </>
+      )}
+
+      {kind === "atr" && (
+        <>
+          <path
+            d="M120 170 L220 120 L280 190 L360 110 L440 200 L540 140"
+            fill="none"
+            stroke="#8ab4ff"
+            strokeWidth="5"
+          />
+          <circle cx="320" cy="160" r="36" fill="#1a2421" stroke="#d4a04a" strokeWidth="3" className={pulse} />
+          <text x="320" y="165" textAnchor="middle" fill="#d4a04a" fontSize="14">
+            ATR
+          </text>
+          <text x="320" y="250" textAnchor="middle" fill="#8a9b94" fontSize="13">
+            replication-fork checkpoint
           </text>
         </>
       )}

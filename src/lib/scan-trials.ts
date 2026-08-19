@@ -35,6 +35,12 @@ type CtStudy = {
 
 type CtResponse = { studies?: CtStudy[] };
 
+const SPOP_QUERIES = [
+  "SPOP mutation prostate cancer",
+  "SPOP mutant prostate",
+  "SPOP gene mutation prostate",
+];
+
 const QUERIES = [
   "mRNA neoantigen cancer vaccine melanoma OR prostate OR colorectal OR NSCLC",
   "T-cell engager prostate cancer PSMA OR KLK2",
@@ -78,7 +84,8 @@ function guessModality(text: string): Modality {
     return "t-cell-engager";
   if (/pd-1.*vegf|vegf.*pd-1|pd-l1.*vegf/.test(t)) return "bispecific-io";
   if (/antibody-drug|adc\b|conjugate/.test(t)) return "adc";
-  if (/parp/.test(t)) return "parp";
+  if (/atr inhibitor|tuvusertib|m1774/.test(t)) return "atr";
+  if (/parp|niraparib|olaparib|talazoparib|rucaparib/.test(t)) return "parp";
   if (/oncolytic|adenovirus|herpes|reovirus|pelareorep/.test(t)) return "viral-immuno";
   if (/pd-1|pd-l1|pembrolizumab|nivolumab|cemiplimab|checkpoint/.test(t)) return "checkpoint";
   return "t-cell-engager";
@@ -138,8 +145,12 @@ function stepsFor(modality: Modality, name: string): MechStep[] {
       { title: "Bystander kill", body: "Nearby antigen-low cells can also die.", scene: "hunt" },
     ],
     parp: [
-      { title: "DNA repair trap", body: `${n} blocks PARP in HRR-deficient tumors.`, scene: "parp" },
+      { title: "DNA repair trap", body: `${n} blocks PARP in repair-stressed tumors.`, scene: "parp" },
       { title: "Synthetic lethality", body: "Unrepaired breaks accumulate until the cell dies.", scene: "kill" },
+    ],
+    atr: [
+      { title: "Replication stress", body: "Forks stall; the tumor leans on ATR to survive.", scene: "atr" },
+      { title: `${n} blocks ATR`, body: "Without the checkpoint, stalled forks collapse.", scene: "kill" },
     ],
     "bispecific-io": [
       { title: "PD-1 + VEGF in one antibody", body: `${n} blocks immune exhaustion and tumor blood supply together.`, scene: "vegf" },
@@ -166,29 +177,37 @@ function knownNames() {
   return developments.map((d) => d.name.toLowerCase());
 }
 
+async function pullStudies(term: string, opts: { allStatuses?: boolean; pageSize?: number; cond?: string } = {}) {
+  const url = new URL("https://clinicaltrials.gov/api/v2/studies");
+  url.searchParams.set("query.term", term);
+  if (opts.cond) url.searchParams.set("query.cond", opts.cond);
+  if (!opts.allStatuses) {
+    url.searchParams.set(
+      "filter.overallStatus",
+      "RECRUITING,ACTIVE_NOT_RECRUITING,ENROLLING_BY_INVITATION,NOT_YET_RECRUITING",
+    );
+  }
+  url.searchParams.set("pageSize", String(opts.pageSize ?? 12));
+  url.searchParams.set("sort", "LastUpdatePostDate");
+  url.searchParams.set("format", "json");
+  try {
+    const res = await fetch(url.toString());
+    if (!res.ok) return [] as CtStudy[];
+    const body = (await res.json()) as CtResponse;
+    return body.studies ?? [];
+  } catch {
+    return [] as CtStudy[];
+  }
+}
+
 export async function fetchRecentTrials(): Promise<Development[]> {
   const studies: CtStudy[] = [];
-  await Promise.all(
-    QUERIES.map(async (q) => {
-      const url = new URL("https://clinicaltrials.gov/api/v2/studies");
-      url.searchParams.set("query.term", q);
-      url.searchParams.set(
-        "filter.overallStatus",
-        "RECRUITING,ACTIVE_NOT_RECRUITING,ENROLLING_BY_INVITATION,NOT_YET_RECRUITING",
-      );
-      url.searchParams.set("pageSize", "12");
-      url.searchParams.set("sort", "LastUpdatePostDate");
-      url.searchParams.set("format", "json");
-      try {
-        const res = await fetch(url.toString());
-        if (!res.ok) return;
-        const body = (await res.json()) as CtResponse;
-        studies.push(...(body.studies ?? []));
-      } catch {
-        /* network / CORS — skip this query */
-      }
-    }),
-  );
+  const batches = await Promise.all([
+    ...SPOP_QUERIES.map((q) => pullStudies(q, { allStatuses: true, pageSize: 20 })),
+    pullStudies("SPOP", { allStatuses: true, pageSize: 20, cond: "Prostate Cancer" }),
+    ...QUERIES.map((q) => pullStudies(q)),
+  ]);
+  for (const batch of batches) studies.push(...batch);
 
   const seenNct = knownNcts();
   const seenId = knownIds();
@@ -254,11 +273,15 @@ export async function fetchRecentTrials(): Promise<Development[]> {
         { label: `${nct} · ClinicalTrials.gov`, url: `https://clinicaltrials.gov/study/${nct}` },
       ],
       steps: stepsFor(modality, drug),
-      impact: "watch",
+      impact: /\bSPOP\b/i.test(blob) ? "landmark" : "watch",
+      biomarkers: /\bSPOP\b/i.test(blob) ? ["SPOP"] : undefined,
+      breaking: /\bSPOP\b/i.test(blob) || undefined,
     });
   }
 
-  return out.slice(0, 24);
+  const spopHits = out.filter((d) => d.biomarkers?.includes("SPOP"));
+  const rest = out.filter((d) => !d.biomarkers?.includes("SPOP")).slice(0, 24);
+  return [...spopHits, ...rest];
 }
 
 export function matchCompanyIds(sponsors: string[]): string[] {

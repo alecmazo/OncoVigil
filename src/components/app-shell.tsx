@@ -23,8 +23,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link to="/" className="hover:text-fg">
               Pipeline
             </Link>
-            <Link to="/lab" className="hover:text-fg">
-              Lab
+            <Link to="/spop" className="hover:text-amber">
+              SPOP
             </Link>
             <Link to="/watchlist" className="hover:text-fg">
               Watch

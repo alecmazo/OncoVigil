@@ -7,6 +7,7 @@ import {
   MODALITY_LABEL,
   STAGE_LABEL,
   STAGE_ORDER,
+  isSpopProgram,
   type CancerType,
   type Modality,
 } from "@/data/pipeline";
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { usePrograms } from "@/lib/use-programs";
 import { fetchRecentTrials } from "@/lib/scan-trials";
 import { mergeDiscovered } from "@/lib/discovered";
+import { pingSpopAlert } from "@/lib/spop-alert";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -23,12 +25,14 @@ function Home() {
   const [cancer, setCancer] = useState<CancerType | "all">("all");
   const [modality, setModality] = useState<Modality | "all">("all");
   const [q, setQ] = useState("");
+  const [spopOnly, setSpopOnly] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanMsg, setScanMsg] = useState<string | null>(null);
   const [scanErr, setScanErr] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return programs.filter((d) => {
+      if (spopOnly && !isSpopProgram(d)) return false;
       if (cancer !== "all" && !d.cancers.includes(cancer)) return false;
       if (modality !== "all" && d.modality !== modality) return false;
       if (q.trim()) {
@@ -40,9 +44,12 @@ function Home() {
       }
       return true;
     });
-  }, [programs, cancer, modality, q]);
+  }, [programs, cancer, modality, q, spopOnly]);
 
-  const breaking = programs.find((d) => d.breaking) ?? programs[0];
+  const breaking =
+    programs.find((d) => d.breaking && isSpopProgram(d)) ??
+    programs.find((d) => d.breaking) ??
+    programs[0];
   const byStage = STAGE_ORDER.map((stage) => ({
     stage,
     items: filtered.filter((d) => d.stage === stage),
@@ -58,7 +65,13 @@ function Home() {
     try {
       const found = await fetchRecentTrials();
       const { added } = mergeDiscovered(found);
-      if (added.length === 0) {
+      const spop = added.filter(isSpopProgram);
+      if (spop.length) {
+        pingSpopAlert(spop.map((d) => d.shortName || d.name));
+        setScanMsg(
+          `SPOP ALERT — ${spop.length} new program${spop.length === 1 ? "" : "s"} naming SPOP mutations.`,
+        );
+      } else if (added.length === 0) {
         setScanMsg(
           `Scanned ${found.length} recent trials — already on the board. Check again next week.`,
         );
@@ -104,6 +117,24 @@ function Home() {
             ))}
           </div>
         </section>
+
+        <Link
+          to="/spop"
+          className="mb-6 flex flex-col gap-3 rounded-[var(--radius)] border border-amber/50 bg-elevated p-5 md:flex-row md:items-center md:justify-between"
+        >
+          <div>
+            <p className="text-xs tracking-[0.18em] text-amber uppercase">Priority · SPOP-mutant prostate</p>
+            <p className="mt-1 font-display text-2xl">
+              Nobody is recruiting. Mayo Akeega terminated. NCI tuvusertib is closed.
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              Any new NCT that requires an SPOP mutation is treated as breaking — scan weekly or open the desk
+            </p>
+          </div>
+          <span className="inline-flex h-11 items-center gap-2 self-start rounded-full border border-amber/60 px-4 text-sm text-amber">
+            Open SPOP desk <ArrowRight className="size-4" />
+          </span>
+        </Link>
 
         {breaking && (
           <Link
@@ -152,7 +183,10 @@ function Home() {
         {scanErr && <p className="mb-3 text-sm text-danger">{scanErr}</p>}
 
         <div className="mb-3 flex flex-wrap gap-2">
-          <FilterChip active={cancer === "all"} onClick={() => setCancer("all")}>
+          <FilterChip active={spopOnly} onClick={() => setSpopOnly(!spopOnly)}>
+            SPOP mutations
+          </FilterChip>
+          <FilterChip active={cancer === "all" && !spopOnly} onClick={() => { setCancer("all"); setSpopOnly(false); }}>
             All cancers
           </FilterChip>
           {cancers.map((c) => (
@@ -202,6 +236,7 @@ function Home() {
                     </p>
                     <p className="mt-3 text-[10px] tracking-wide text-primary uppercase">
                       {d.cancers.map((c) => CANCER_LABEL[c]).join(" · ")}
+                      {d.biomarkers?.length ? ` · ${d.biomarkers.join(" · ")}` : ""}
                     </p>
                   </Link>
                 ))}

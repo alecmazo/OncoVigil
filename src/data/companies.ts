@@ -200,6 +200,31 @@ export const COMPANIES: Record<string, Company> = {
     website: "https://www.ictbio.com/",
     trialsHub: "https://clinicaltrials.gov/search?intr=GCC19CART",
   },
+  mayo: {
+    id: "mayo",
+    name: "Mayo Clinic",
+    hq: "Rochester, MN",
+    website: "https://www.mayo.edu/",
+    trialsHub: "https://www.mayo.edu/research/clinical-trials",
+    phone: "+1 855-776-0015",
+  },
+  emd: {
+    id: "emd",
+    name: "EMD Serono (Merck KGaA)",
+    ticker: "ETR: MRK",
+    hq: "Darmstadt / Boston",
+    website: "https://www.emdserono.com/",
+    pipelineUrl: "https://www.emdgroup.com/en/research/pipeline.html",
+    irUrl: "https://www.emdgroup.com/en/investors.html",
+    trialsHub: "https://clinicaltrials.merckgroup.com/",
+  },
+  nci: {
+    id: "nci",
+    name: "National Cancer Institute",
+    hq: "Bethesda, MD",
+    website: "https://www.cancer.gov/",
+    trialsHub: "https://www.cancer.gov/research/participate/clinical-trials-search",
+  },
 };
 
 export const PROGRAM_COMPANIES: Record<string, string[]> = {
@@ -222,6 +247,8 @@ export const PROGRAM_COMPANIES: Record<string, string[]> = {
   pumitamig: ["biontech", "bms"],
   "gcc-car-t": ["ict"],
   "tec-dara": ["jnj"],
+  "akeega-spop": ["mayo", "jnj"],
+  "tuvusertib-spop": ["nci", "emd"],
 };
 
 export const PROGRAM_TRIALS: Record<string, TrialRef[]> = {
@@ -355,6 +382,20 @@ export const PROGRAM_TRIALS: Record<string, TrialRef[]> = {
     {
       name: "MajesTEC-3",
       url: "https://clinicaltrials.gov/search?term=MajesTEC-3",
+    },
+  ],
+  "akeega-spop": [
+    {
+      name: "SPOP-mutant mCRPC — niraparib/abiraterone",
+      nct: "NCT05689021",
+      url: "https://clinicaltrials.gov/study/NCT05689021",
+    },
+  ],
+  "tuvusertib-spop": [
+    {
+      name: "Refractory SPOP-mutant prostate — tuvusertib (M1774)",
+      nct: "NCT05828082",
+      url: "https://clinicaltrials.gov/study/NCT05828082",
     },
   ],
 };

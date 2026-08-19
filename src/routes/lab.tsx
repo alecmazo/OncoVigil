@@ -21,6 +21,7 @@ const ORDER: Modality[] = [
   "bispecific-io",
   "adc",
   "parp",
+  "atr",
   "checkpoint",
 ];
 

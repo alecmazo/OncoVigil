@@ -79,6 +79,21 @@ function Detail() {
                   {CANCER_LABEL[c]}
                 </span>
               ))}
+              {d.biomarkers?.map((b) =>
+                b.toUpperCase() === "SPOP" ? (
+                  <Link
+                    key={b}
+                    to="/spop"
+                    className="rounded-full border border-amber/50 px-3 py-1 text-amber hover:bg-amber/10"
+                  >
+                    {b} desk
+                  </Link>
+                ) : (
+                  <span key={b} className="rounded-full border border-amber/50 px-3 py-1 text-amber">
+                    {b}
+                  </span>
+                ),
+              )}
             </div>
           </div>
           {canWatch ? (

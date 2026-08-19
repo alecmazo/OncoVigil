@@ -19,6 +19,7 @@ export type Modality =
   | "viral-immuno"
   | "adc"
   | "parp"
+  | "atr"
   | "bispecific-io";
 
 export type PipelineStage =
@@ -46,7 +47,9 @@ export type SceneKind =
   | "virus"
   | "adc"
   | "parp"
-  | "vegf";
+  | "vegf"
+  | "spop"
+  | "atr";
 
 export type MechStep = {
   title: string;
@@ -77,6 +80,7 @@ export type Development = {
   sources: { label: string; url: string }[];
   steps: MechStep[];
   impact: "landmark" | "high" | "watch";
+  biomarkers?: string[];
 };
 
 export const CANCER_LABEL: Record<CancerType, string> = {
@@ -101,6 +105,7 @@ export const MODALITY_LABEL: Record<Modality, string> = {
   "viral-immuno": "Viral immunotherapy",
   adc: "Antibody-drug conjugate",
   parp: "PARP + ARPI",
+  atr: "ATR inhibitor",
   "bispecific-io": "PD-1/VEGF bispecific",
 };
 
@@ -1002,7 +1007,127 @@ export const developments: Development[] = [
     ],
     impact: "high",
   },
+  {
+    id: "akeega-spop",
+    name: "Akeega (niraparib + abiraterone) + prednisone — SPOP-mutant mCRPC",
+    shortName: "Akeega · SPOP",
+    sponsors: ["Mayo Clinic", "Johnson & Johnson"],
+    cancers: ["prostate"],
+    modality: "parp",
+    stage: "phase-2",
+    biomarkers: ["SPOP"],
+    breaking: true,
+    date: "2026-07-02",
+    headline:
+      "TERMINATED — Mayo's SPOP-selected Akeega trial closed 2 Jul 2026 for slow accrual and lack of efficacy (n=8).",
+    whatItDoes:
+      "Akeega is a fixed-dose pill of niraparib (PARP inhibitor) plus abiraterone (androgen-synthesis blocker), given with prednisone. Mayo Clinic's NCT05689021 was not a BRCA trial that happens to allow SPOP — SPOP mutation was the enrollment key. The sponsor terminated on 2 July 2026 after only 8 patients, citing slow accrual and lack of efficacy. SPOP-mutant prostate cancer remains a distinct ~8–15% subtype: MATH-domain mutants break an E3 ligase, AR and DNA-repair stress rise, and the tumor often behaves as if it has BRCAness even when BRCA1/2 are wild-type. This trial did not confirm PARP+ARPI as the answer.",
+    howItWorks:
+      "Wild-type SPOP tags AR coactivators, BET proteins and other substrates for cullin-3 destruction. Hotspot mutants (Y87, F102, F133, W131 and related MATH residues) fail that job. AR signaling runs hot — which is why these tumors are unusually ARPI-sensitive — and replication stress rises. Niraparib traps PARP on damaged DNA; abiraterone starves the AR that SPOP can no longer restrain. The bet was synthetic lethality in SPOP-mutant cells with or without a co-occurring HRR defect. Termination for lack of efficacy means that bet did not hold in this 8-patient Mayo cohort.",
+    trial: {
+      name: "Mayo Phase 2 — mCRPC with SPOP mutation ± HRD",
+      nct: "NCT05689021",
+      n: 8,
+      result:
+        "TERMINATED 2 Jul 2026. Sponsor closed for slow accrual and lack of efficacy. Actual enrollment: 8. Sites: Mayo Arizona, Florida, Rochester. Qualifying deleterious SPOP mutation on any archival genomic assay was required.",
+    },
+    nextSteps:
+      "Do not treat Akeega as an open SPOP option. The remaining dedicated protocol is NCI tuvusertib (NCT05828082), already closed to enrollment. Any new IND or NCT that requires SPOP is breaking.",
+    sources: [
+      {
+        label: "NCT05689021 · ClinicalTrials.gov",
+        url: "https://clinicaltrials.gov/study/NCT05689021",
+      },
+      {
+        label: "JCO PO 2025 — SPOP and ARPI outcomes",
+        url: "https://ascopubs.org/doi/10.1200/PO-25-00590",
+      },
+    ],
+    steps: [
+      {
+        title: "SPOP is the trash tagger",
+        body: "Normal SPOP sits in a cullin-3 RING ligase and marks AR coactivators, BRD4 and other proteins for destruction.",
+        scene: "spop",
+      },
+      {
+        title: "MATH-domain mutants let substrates pile up",
+        body: "Prostate-cancer hotspots wreck substrate recognition. AR signaling and replication stress both climb.",
+        scene: "spop",
+      },
+      {
+        title: "Abiraterone cuts the androgen supply",
+        body: "CYP17 blockade hits the AR axis these tumors depend on — SPOP-mutant disease is ARPI-sensitive.",
+        scene: "kill",
+      },
+      {
+        title: "Niraparib traps PARP on the damaged DNA",
+        body: "If the SPOP-mutant cell is already repair-stressed, PARP inhibition is meant to finish it — even without BRCA.",
+        scene: "parp",
+      },
+    ],
+    impact: "landmark",
+  },
+  {
+    id: "tuvusertib-spop",
+    name: "Tuvusertib (M1774) — refractory SPOP-mutant prostate cancer",
+    shortName: "Tuvusertib · SPOP",
+    sponsors: ["NCI", "EMD Serono (Merck KGaA)"],
+    cancers: ["prostate"],
+    modality: "atr",
+    stage: "phase-2",
+    biomarkers: ["SPOP"],
+    date: "2026-08-19",
+    headline:
+      "Last dedicated SPOP-mutant prostate trial — ATR inhibitor tuvusertib, now closed to new enrollment.",
+    whatItDoes:
+      "Tuvusertib (M1774) is an oral ATR kinase inhibitor from EMD Serono. NCT05828082 (NCI ETCTN) tests it in men whose prostate cancer carries an SPOP mutation and has already failed standard treatment. Status as of August 2026: Active, not recruiting — no new patients. ATR is the replication-fork checkpoint; SPOP-mutant cells run with chronic replication stress, so they may depend on ATR the way BRCA-mutant cells depend on PARP.",
+    howItWorks:
+      "Failed SPOP degradation destabilizes genome maintenance and leaves forks unprotected. ATR phosphorylates CHK1 and buys time to restart those forks. Tuvusertib shuts ATR off; the fork collapses into lethal double-strand breaks. This is a different DNA-damage bet than Akeega — useful when ARPI/PARP have already been used. Do not confuse this with BET inhibitors: SPOP-mutant tumors stabilize BRD4 and are typically BET-inhibitor resistant.",
+    trial: {
+      name: "NCI Phase 2 — refractory SPOP-mutant prostate cancer",
+      nct: "NCT05828082",
+      n: 20,
+      result:
+        "Active, not recruiting. SPOP mutation required by NGS. Estimated enrollment 20. Primary completion ~Jan 2027. 26 U.S. sites including Mayo, UC Irvine, Miami, KU, WashU, UT Southwestern, UVA, Wisconsin, UPMC, Oklahoma.",
+    },
+    nextSteps:
+      "Readout is the only remaining first-in-class SPOP synthetic-lethality signal in the clinic. Treat a protocol reopening, amendment, or any new NCT that requires SPOP as breaking — nobody else is enrolling.",
+    sources: [
+      {
+        label: "NCT05828082 · ClinicalTrials.gov",
+        url: "https://clinicaltrials.gov/study/NCT05828082",
+      },
+      {
+        label: "Tuvusertib / M1774 (EMD Serono)",
+        url: "https://clinicaltrials.merckgroup.com/en/trial-details/?id=MS201924_0001",
+      },
+    ],
+    steps: [
+      {
+        title: "SPOP loss = replication stress",
+        body: "Without a working SPOP ligase, forks stall and the ATR checkpoint becomes a crutch.",
+        scene: "spop",
+      },
+      {
+        title: "ATR is the last night watch",
+        body: "ATR–CHK1 pauses the cell cycle so damaged forks can restart.",
+        scene: "atr",
+      },
+      {
+        title: "Tuvusertib drops the checkpoint",
+        body: "M1774 blocks ATR. Stalled forks collapse into double-strand breaks the SPOP-mutant cell cannot clean up.",
+        scene: "kill",
+      },
+    ],
+    impact: "landmark",
+  },
 ];
+
+export function isSpopProgram(d: { biomarkers?: string[]; name?: string; headline?: string }) {
+  if (d.biomarkers?.some((b) => b.toUpperCase() === "SPOP")) return true;
+  const hay = `${d.name ?? ""} ${d.headline ?? ""}`;
+  return /\bSPOP\b/i.test(hay);
+}
 
 export function getDevelopment(id: string) {
   return developments.find((d) => d.id === id);

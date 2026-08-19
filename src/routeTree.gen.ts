@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LabRouteImport } from './routes/lab'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as SpopRouteImport } from './routes/spop'
 import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as DIdRouteImport } from './routes/d.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -29,6 +30,11 @@ const LabRoute = LabRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpopRoute = SpopRouteImport.update({
+  id: '/spop',
+  path: '/spop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WatchlistRoute = WatchlistRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/lab': typeof LabRoute
   '/login': typeof LoginRoute
+  '/spop': typeof SpopRoute
   '/watchlist': typeof WatchlistRoute
   '/d/$id': typeof DIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/lab': typeof LabRoute
   '/login': typeof LoginRoute
+  '/spop': typeof SpopRoute
   '/watchlist': typeof WatchlistRoute
   '/d/$id': typeof DIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -68,20 +76,24 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/lab': typeof LabRoute
   '/login': typeof LoginRoute
+  '/spop': typeof SpopRoute
   '/watchlist': typeof WatchlistRoute
   '/d/$id': typeof DIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/lab' | '/login' | '/watchlist' | '/d/$id' | '/api/auth/$'
+  fullPaths:
+    '/' | '/lab' | '/login' | '/spop' | '/watchlist' | '/d/$id' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/lab' | '/login' | '/watchlist' | '/d/$id' | '/api/auth/$'
+  to:
+    '/' | '/lab' | '/login' | '/spop' | '/watchlist' | '/d/$id' | '/api/auth/$'
   id:
     | '__root__'
     | '/'
     | '/lab'
     | '/login'
+    | '/spop'
     | '/watchlist'
     | '/d/$id'
     | '/api/auth/$'
@@ -91,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LabRoute: typeof LabRoute
   LoginRoute: typeof LoginRoute
+  SpopRoute: typeof SpopRoute
   WatchlistRoute: typeof WatchlistRoute
   DIdRoute: typeof DIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -117,6 +130,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spop': {
+      id: '/spop'
+      path: '/spop'
+      fullPath: '/spop'
+      preLoaderRoute: typeof SpopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/watchlist': {
@@ -147,6 +167,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LabRoute: LabRoute,
   LoginRoute: LoginRoute,
+  SpopRoute: SpopRoute,
   WatchlistRoute: WatchlistRoute,
   DIdRoute: DIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
