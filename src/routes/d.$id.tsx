@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Bookmark, ExternalLink, Loader2, Mail, Phone } from "lucide-react";
@@ -9,11 +9,14 @@ import {
   MODALITY_LABEL,
   STAGE_LABEL,
   getDevelopment,
+  type Development,
 } from "@/data/pipeline";
 import { companiesFor, trialsFor } from "@/data/companies";
 import { findProgram } from "@/lib/discovered";
 import { askBriefing } from "@/lib/briefing";
+import type { BriefingInput } from "@/lib/briefing-types";
 import { listWatch, toggleWatch } from "@/lib/watchlist";
+import { authEnabled } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { cn } from "@/lib/utils";
 
@@ -21,16 +24,46 @@ export const Route = createFileRoute("/d/$id")({
   component: Detail,
 });
 
+function briefingPayload(d: Development): BriefingInput {
+  return {
+    id: d.id,
+    name: d.name,
+    shortName: d.shortName,
+    sponsors: d.sponsors,
+    stage: d.stage,
+    modality: d.modality,
+    cancers: d.cancers,
+    headline: d.headline,
+    whatItDoes: d.whatItDoes,
+    howItWorks: d.howItWorks,
+    trialName: d.trial?.name,
+    trialResult: d.trial?.result,
+    nct: d.trial?.nct,
+    nextSteps: d.nextSteps,
+    biomarkers: d.biomarkers,
+  };
+}
+
+function cacheKey(id: string) {
+  return `oncovigil.brief.${id}`;
+}
+
+function loginNext(id: string) {
+  return `/login?next=${encodeURIComponent(`/d/${id}?brief=1`)}`;
+}
+
 function Detail() {
   const { id } = Route.useParams();
   const d = findProgram(id) ?? getDevelopment(id);
-  const { user } = useCurrentUserState();
+  const { user, isPending } = useCurrentUserState();
   const spa = import.meta.env.VITE_SPA === "1";
   const canWatch = Boolean(user) || spa;
+  const canBrief = authEnabled && Boolean(user) && !user?.isDevFallback;
   const [watching, setWatching] = useState(false);
   const [brief, setBrief] = useState<string | null>(null);
   const [briefErr, setBriefErr] = useState<string | null>(null);
   const [loadingBrief, setLoadingBrief] = useState(false);
+  const autoBriefed = useRef(false);
 
   useEffect(() => {
     if (!canWatch) return;
@@ -38,6 +71,58 @@ function Detail() {
       .then((rows) => setWatching(rows.some((r) => r.development_id === id)))
       .catch(() => setWatching(false));
   }, [canWatch, id]);
+
+  useEffect(() => {
+    autoBriefed.current = false;
+    try {
+      const raw = window.localStorage.getItem(cacheKey(id));
+      if (!raw) {
+        setBrief(null);
+        return;
+      }
+      const parsed = JSON.parse(raw) as { text?: string };
+      setBrief(parsed.text ?? null);
+    } catch {
+      setBrief(null);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (!d || !canBrief || isPending || autoBriefed.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("brief") !== "1") return;
+    autoBriefed.current = true;
+    void runBriefing(d);
+    params.delete("brief");
+    const qs = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once after Grok login returns
+  }, [canBrief, isPending, d?.id]);
+
+  async function runBriefing(program: Development) {
+    setLoadingBrief(true);
+    setBriefErr(null);
+    try {
+      const res = await askBriefing({ data: briefingPayload(program) });
+      if (!res.ok) setBriefErr(res.error);
+      else {
+        setBrief(res.text);
+        try {
+          window.localStorage.setItem(cacheKey(program.id), JSON.stringify({ text: res.text, at: Date.now() }));
+        } catch {
+          /* ignore quota */
+        }
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message === "Unauthorized") {
+        window.location.assign(loginNext(program.id));
+        return;
+      }
+      setBriefErr(err instanceof Error ? err.message : "Briefing failed");
+    } finally {
+      setLoadingBrief(false);
+    }
+  }
 
   if (!d) {
     return (
@@ -172,23 +257,32 @@ function Detail() {
 
         <section className="mt-6 rounded-[var(--radius)] border border-border bg-elevated p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-xl">Ask Grok for a briefing</h2>
-            <button
-              type="button"
-              disabled={loadingBrief}
-              onClick={async () => {
-                setLoadingBrief(true);
-                setBriefErr(null);
-                const res = await askBriefing({ data: { id } });
-                setLoadingBrief(false);
-                if (!res.ok) setBriefErr(res.error);
-                else setBrief(res.text);
-              }}
-              className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm text-primary-fg"
-            >
-              {loadingBrief && <Loader2 className="size-4 animate-spin" />}
-              Generate briefing
-            </button>
+            <div>
+              <h2 className="font-display text-xl">Ask Grok for a briefing</h2>
+              <p className="mt-1 text-xs text-muted">
+                Same path as sign-in — Grok session, then grok-4.5 on this program.
+              </p>
+            </div>
+            {canBrief ? (
+              <button
+                type="button"
+                disabled={loadingBrief}
+                onClick={() => void runBriefing(d)}
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm text-primary-fg"
+              >
+                {loadingBrief && <Loader2 className="size-4 animate-spin" />}
+                {brief ? "Regenerate briefing" : "Generate briefing"}
+              </button>
+            ) : authEnabled ? (
+              <a
+                href={loginNext(id)}
+                className="inline-flex h-11 items-center rounded-full bg-primary px-4 text-sm text-primary-fg"
+              >
+                Sign in to generate
+              </a>
+            ) : (
+              <p className="text-sm text-muted">Sign in on the live app to generate.</p>
+            )}
           </div>
           {briefErr && <p className="mt-3 text-sm text-danger">{briefErr}</p>}
           {brief && (

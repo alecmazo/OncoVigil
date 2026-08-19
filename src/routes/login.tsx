@@ -1,12 +1,24 @@
 import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { AppShell } from "@/components/app-shell";
+
+function safeNext(raw: unknown): string {
+  if (typeof raw !== "string") return "/";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("://")) return "/";
+  return raw;
+}
 
 export const Route = createFileRoute("/login")({ component: Login });
 
 function Login() {
   const navigate = useNavigate();
+  const searchStr = useRouterState({
+    select: (s) => s.location.searchStr ?? "",
+  });
+  const next = safeNext(
+    new URLSearchParams(searchStr.startsWith("?") ? searchStr.slice(1) : searchStr).get("next"),
+  );
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +46,11 @@ function Login() {
         if (err) throw new Error(err.message ?? "Could not sign in");
       }
       await authClient.getSession();
-      await navigate({ to: "/" });
+      if (next.includes("?")) {
+        window.location.assign(next);
+        return;
+      }
+      await navigate({ to: next });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed");
     } finally {
@@ -51,7 +67,7 @@ function Login() {
             {mode === "in" ? "Sign in" : "Create an account"}
           </h1>
           <p className="text-sm leading-relaxed text-muted">
-            Real accounts — Google, X, or email. Used to pin programs to your watchlist.
+            Google, X, or email — the same Grok login used for watchlists and Grok briefings.
           </p>
           {authEnabled ? (
             <>
@@ -59,7 +75,7 @@ function Login() {
                 <button
                   key={p.providerId}
                   type="button"
-                  onClick={() => signIn(p.providerId, { callbackURL: "/" })}
+                  onClick={() => signIn(p.providerId, { callbackURL: next, errorCallbackURL: "/login" })}
                   className="h-12 w-full rounded-full border border-border bg-elevated text-sm hover:border-primary"
                 >
                   Continue with {p.label}
