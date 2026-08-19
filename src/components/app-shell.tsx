@@ -1,11 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { authEnabled, signOut } from "@/lib/auth/client";
-import { useCurrentUserState } from "@/lib/auth/use-current-user";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { user } = useCurrentUserState();
-  const signedIn = Boolean(user) && !user?.isDevFallback;
-
   return (
     <div className="min-h-screen bg-bg text-fg">
       <header className="sticky top-0 z-30 border-b border-border bg-bg/90 backdrop-blur-md">
@@ -30,31 +25,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Watch
             </Link>
           </nav>
-          <div className="ml-auto flex shrink-0 items-center">
-            {signedIn ? (
-              <div className="flex items-center gap-2">
-                <span className="hidden max-w-[10rem] truncate text-sm md:inline">
-                  {user?.displayName ?? user?.primaryEmail}
-                </span>
-                {authEnabled && (
-                  <button
-                    type="button"
-                    onClick={() => void signOut()}
-                    className="inline-flex h-11 items-center rounded-full border border-border px-4 text-sm hover:border-primary"
-                  >
-                    Sign out
-                  </button>
-                )}
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className="inline-flex h-11 min-w-[7.5rem] items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-fg"
-              >
-                Sign in
-              </Link>
-            )}
-          </div>
         </div>
       </header>
       {children}

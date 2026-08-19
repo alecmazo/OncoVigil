@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Bookmark, ExternalLink, Loader2, Mail, Phone } from "lucide-react";
@@ -15,9 +15,7 @@ import { companiesFor, trialsFor } from "@/data/companies";
 import { findProgram } from "@/lib/discovered";
 import { askBriefing } from "@/lib/briefing";
 import type { BriefingInput } from "@/lib/briefing-types";
-import { listWatch, toggleWatch } from "@/lib/watchlist";
-import { authEnabled } from "@/lib/auth/client";
-import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { localListWatch, localToggleWatch } from "@/lib/watch-local";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/d/$id")({
@@ -48,32 +46,19 @@ function cacheKey(id: string) {
   return `oncovigil.brief.${id}`;
 }
 
-function loginNext(id: string) {
-  return `/login?next=${encodeURIComponent(`/d/${id}?brief=1`)}`;
-}
-
 function Detail() {
   const { id } = Route.useParams();
   const d = findProgram(id) ?? getDevelopment(id);
-  const { user, isPending } = useCurrentUserState();
-  const spa = import.meta.env.VITE_SPA === "1";
-  const canWatch = Boolean(user) || spa;
-  const canBrief = authEnabled && Boolean(user) && !user?.isDevFallback;
   const [watching, setWatching] = useState(false);
   const [brief, setBrief] = useState<string | null>(null);
   const [briefErr, setBriefErr] = useState<string | null>(null);
   const [loadingBrief, setLoadingBrief] = useState(false);
-  const autoBriefed = useRef(false);
 
   useEffect(() => {
-    if (!canWatch) return;
-    listWatch()
-      .then((rows) => setWatching(rows.some((r) => r.development_id === id)))
-      .catch(() => setWatching(false));
-  }, [canWatch, id]);
+    setWatching(localListWatch().includes(id));
+  }, [id]);
 
   useEffect(() => {
-    autoBriefed.current = false;
     try {
       const raw = window.localStorage.getItem(cacheKey(id));
       if (!raw) {
@@ -86,18 +71,6 @@ function Detail() {
       setBrief(null);
     }
   }, [id]);
-
-  useEffect(() => {
-    if (!d || !canBrief || isPending || autoBriefed.current) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("brief") !== "1") return;
-    autoBriefed.current = true;
-    void runBriefing(d);
-    params.delete("brief");
-    const qs = params.toString();
-    window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once after Grok login returns
-  }, [canBrief, isPending, d?.id]);
 
   async function runBriefing(program: Development) {
     setLoadingBrief(true);
@@ -114,10 +87,6 @@ function Detail() {
         }
       }
     } catch (err) {
-      if (err instanceof Error && err.message === "Unauthorized") {
-        window.location.assign(loginNext(program.id));
-        return;
-      }
       setBriefErr(err instanceof Error ? err.message : "Briefing failed");
     } finally {
       setLoadingBrief(false);
@@ -181,39 +150,19 @@ function Detail() {
               )}
             </div>
           </div>
-          {canWatch ? (
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  const res = await toggleWatch({ data: id });
-                  setWatching(res.watching);
-                } catch {
-                  window.location.assign("/login");
-                }
-              }}
-              className={cn(
-                "inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm",
-                watching
-                  ? "border-primary bg-primary text-primary-fg"
-                  : "border-border hover:border-primary",
-              )}
-            >
-              <Bookmark className="size-4" />
-              {watching ? "Watching" : "Watch"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                window.location.assign("/login");
-              }}
-              className="inline-flex h-11 items-center gap-2 rounded-full border border-border px-4 text-sm hover:border-primary"
-            >
-              <Bookmark className="size-4" />
-              Watch
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setWatching(localToggleWatch(id).watching)}
+            className={cn(
+              "inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm",
+              watching
+                ? "border-primary bg-primary text-primary-fg"
+                : "border-border hover:border-primary",
+            )}
+          >
+            <Bookmark className="size-4" />
+            {watching ? "Watching" : "Watch"}
+          </button>
         </div>
 
         <p className="mt-8 font-display text-2xl leading-snug">{d.headline}</p>
@@ -264,13 +213,7 @@ function Detail() {
             <button
               type="button"
               disabled={loadingBrief}
-              onClick={() => {
-                if (!canBrief) {
-                  window.location.assign("/login");
-                  return;
-                }
-                void runBriefing(d);
-              }}
+              onClick={() => void runBriefing(d)}
               className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm text-primary-fg"
             >
               {loadingBrief && <Loader2 className="size-4 animate-spin" />}

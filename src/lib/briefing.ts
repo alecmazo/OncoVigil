@@ -1,14 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { companiesFor } from "@/data/companies";
 import { getDevelopment } from "@/data/pipeline";
-import { authMiddleware } from "@/lib/auth/middleware";
 import type { BriefingInput } from "@/lib/briefing-types";
 
 export type { BriefingInput };
 
 export const askBriefing = createServerFn({ method: "POST" })
   .validator((input: BriefingInput) => input)
-  .middleware([authMiddleware])
   .handler(async ({ data }) => {
     const apiKey = process.env.XAI_API_KEY;
     if (!apiKey) {
