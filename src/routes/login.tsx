@@ -66,81 +66,78 @@ function Login() {
           <h1 className="font-display text-3xl">
             {mode === "in" ? "Sign in" : "Create an account"}
           </h1>
-          {authEnabled ? (
-            <>
-              {GROK_PROVIDERS.map((p) => (
-                <button
-                  key={p.providerId}
-                  type="button"
-                  onClick={() => signIn(p.providerId, { callbackURL: next, errorCallbackURL: "/login" })}
-                  className="h-12 w-full rounded-full border border-border bg-elevated text-sm hover:border-primary"
-                >
-                  Continue with {p.label}
-                </button>
-              ))}
-              <div className="flex items-center gap-3 text-xs text-muted">
-                <span className="h-px flex-1 bg-border" />
-                or email
-                <span className="h-px flex-1 bg-border" />
-              </div>
-              <form className="space-y-3" onSubmit={onEmail}>
-                {mode === "up" && (
-                  <label className="block text-xs text-muted">
-                    Name
-                    <input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="mt-1 h-12 w-full rounded-xl border border-border bg-elevated px-4 text-sm text-fg outline-none focus:border-primary"
-                      autoComplete="name"
-                    />
-                  </label>
-                )}
-                <label className="block text-xs text-muted">
-                  Email
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 h-12 w-full rounded-xl border border-border bg-elevated px-4 text-sm text-fg outline-none focus:border-primary"
-                    autoComplete="email"
-                  />
-                </label>
-                <label className="block text-xs text-muted">
-                  Password
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="mt-1 h-12 w-full rounded-xl border border-border bg-elevated px-4 text-sm text-fg outline-none focus:border-primary"
-                    autoComplete={mode === "up" ? "new-password" : "current-password"}
-                  />
-                </label>
-                {error && <p className="text-sm text-danger">{error}</p>}
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="h-12 w-full rounded-full bg-primary text-sm text-primary-fg disabled:opacity-60"
-                >
-                  {busy ? "Working…" : mode === "in" ? "Sign in with email" : "Create account"}
-                </button>
-              </form>
+          {(!import.meta.env.VITE_SPA && authEnabled) &&
+            GROK_PROVIDERS.map((p) => (
               <button
+                key={p.providerId}
                 type="button"
-                className="w-full text-center text-sm text-muted hover:text-fg"
-                onClick={() => {
-                  setMode(mode === "in" ? "up" : "in");
-                  setError(null);
-                }}
+                onClick={() => signIn(p.providerId, { callbackURL: next, errorCallbackURL: "/login" })}
+                className="h-12 w-full rounded-full border border-border bg-elevated text-sm hover:border-primary"
               >
-                {mode === "in" ? "Need an account? Create one" : "Already have an account? Sign in"}
+                Continue with {p.label}
               </button>
-            </>
-          ) : (
-            <p className="text-sm text-muted">Sign-in is disabled.</p>
+            ))}
+          {(!import.meta.env.VITE_SPA && authEnabled) && (
+            <div className="flex items-center gap-3 text-xs text-muted">
+              <span className="h-px flex-1 bg-border" />
+              or email
+              <span className="h-px flex-1 bg-border" />
+            </div>
           )}
+          <form className="space-y-3" onSubmit={onEmail}>
+            {mode === "up" && (
+              <label className="block text-xs text-muted">
+                Name
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1 h-12 w-full rounded-xl border border-border bg-elevated px-4 text-sm text-fg outline-none focus:border-primary"
+                  autoComplete="name"
+                />
+              </label>
+            )}
+            <label className="block text-xs text-muted">
+              Email
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 h-12 w-full rounded-xl border border-border bg-elevated px-4 text-sm text-fg outline-none focus:border-primary"
+                autoComplete="email"
+              />
+            </label>
+            <label className="block text-xs text-muted">
+              Password
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 h-12 w-full rounded-xl border border-border bg-elevated px-4 text-sm text-fg outline-none focus:border-primary"
+                autoComplete={mode === "up" ? "new-password" : "current-password"}
+              />
+            </label>
+            {error && <p className="text-sm text-danger">{error}</p>}
+            <button
+              type="submit"
+              disabled={busy}
+              className="h-12 w-full rounded-full bg-primary text-sm text-primary-fg disabled:opacity-60"
+            >
+              {busy ? "Working…" : mode === "in" ? "Sign in with email" : "Create account"}
+            </button>
+          </form>
+          <button
+            type="button"
+            className="w-full text-center text-sm text-muted hover:text-fg"
+            onClick={() => {
+              setMode(mode === "in" ? "up" : "in");
+              setError(null);
+            }}
+          >
+            {mode === "in" ? "Need an account? Create one" : "Already have an account? Sign in"}
+          </button>
           <Link to="/" className="block text-center text-sm text-muted hover:text-fg">
             Back to pipeline
           </Link>

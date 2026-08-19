@@ -11,11 +11,18 @@ export default defineConfig({
   base: "/OncoVigil/",
   define: {
     "import.meta.env.VITE_SPA": JSON.stringify("1"),
-    "import.meta.env.VITE_AUTH_ENABLED": JSON.stringify("false"),
   },
   plugins: [tailwindcss(), viteReact()],
   resolve: {
     alias: [
+      {
+        find: path.resolve(rootDir, "src/lib/auth/client.ts"),
+        replacement: path.resolve(rootDir, "src/lib/auth/client.spa.ts"),
+      },
+      {
+        find: "@/lib/auth/client",
+        replacement: path.resolve(rootDir, "src/lib/auth/client.spa.ts"),
+      },
       {
         find: "@/lib/watchlist",
         replacement: path.resolve(rootDir, "src/lib/watchlist.spa.ts"),
