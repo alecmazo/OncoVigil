@@ -53,3 +53,16 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+@keyframes kenburns {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+.scene-still {
+  animation: kenburns 9s ease-in-out alternate infinite;
+}
